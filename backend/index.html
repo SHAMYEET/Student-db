@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Portal</title>
+</head>
+<body>
+
+<h2>Add Student</h2>
+
+<input id="name" placeholder="Name">
+<input id="usn" placeholder="USN">
+<button onclick="addStudent()">Add</button>
+
+<h2>Students</h2>
+<ul id="list"></ul>
+
+<script>
+async function addStudent() {
+  const name = document.getElementById("name").value;
+  const usn = document.getElementById("usn").value;
+
+  await fetch("http://localhost:3001/students", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ name, usn })
+  });
+
+  loadStudents();
+}
+
+async function loadStudents() {
+  const res = await fetch("http://localhost:3001/students");
+  const data = await res.json();
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.forEach(s => {
+    list.innerHTML += `<li>${s.name} (${s.usn})</li>`;
+  });
+}
+
+loadStudents();
+</script>
+
+</body>
+</html>
