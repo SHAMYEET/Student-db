@@ -2,24 +2,95 @@
 <html>
 <head>
   <title>Student Portal</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Add Student</h2>
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="container">
+  <h2>🔐 Login</h2>
 
-<input id="name" placeholder="Name">
-<input id="usn" placeholder="USN">
-<button onclick="addStudent()">Add</button>
+  <select id="loginRole">
+    <option value="faculty">Faculty</option>
+    <option value="student">Student</option>
+  </select>
 
-<h2>Students</h2>
-<ul id="list"></ul>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+  <div class="container">
+    <h2>🎓 Student Portal</h2>
+
+    <!-- Role (auto set after login) -->
+    <select id="role" onchange="toggleView()" disabled>
+      <option value="faculty">Faculty</option>
+      <option value="student">Student</option>
+    </select>
+
+    <!-- Faculty Controls -->
+    <div id="facultyControls">
+      <input id="name" placeholder="Enter Name">
+      <input id="usn" placeholder="Enter USN">
+      <button onclick="addStudent()">Add Student</button>
+    </div>
+
+    <h2>Student List</h2>
+    <ul id="list"></ul>
+
+    <button onclick="logout()">Logout</button>
+  </div>
+</div>
 
 <script>
+
+// 🔐 LOGIN FUNCTION
+function login() {
+  const role = document.getElementById("loginRole").value;
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  // simple credentials
+  if (role === "faculty" && username === "admin" && password === "123") {
+    startApp("faculty");
+  } else if (role === "student") {
+    startApp("student");
+  } else {
+    alert("Invalid credentials");
+  }
+}
+
+function startApp(role) {
+  document.getElementById("loginPage").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  document.getElementById("role").value = role;
+  toggleView();
+  loadStudents();
+}
+
+function logout() {
+  location.reload();
+}
+
+// 🎭 ROLE TOGGLE
+function toggleView() {
+  const role = document.getElementById("role").value;
+  const facultyControls = document.getElementById("facultyControls");
+
+  facultyControls.style.display = role === "faculty" ? "block" : "none";
+}
+
+// ➕ ADD STUDENT
 async function addStudent() {
   const name = document.getElementById("name").value;
   const usn = document.getElementById("usn").value;
 
-  await fetch("http://localhost:3001/students", {
+  await fetch("/students", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ name, usn })
@@ -28,19 +99,56 @@ async function addStudent() {
   loadStudents();
 }
 
+// ✏️ UPDATE ATTENDANCE
+async function updateAttendance(id) {
+  const value = prompt("Enter attendance %:");
+
+  await fetch(`/students/${id}`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ attendance: value })
+  });
+
+  loadStudents();
+}
+
+// 🗑️ DELETE STUDENT
+async function deleteStudent(id) {
+  await fetch(`/students/${id}`, {
+    method: "DELETE"
+  });
+
+  loadStudents();
+}
+
+// 📋 LOAD STUDENTS
 async function loadStudents() {
-  const res = await fetch("http://localhost:3001/students");
+  const res = await fetch("/students");
   const data = await res.json();
 
+  const role = document.getElementById("role").value;
   const list = document.getElementById("list");
   list.innerHTML = "";
 
   data.forEach(s => {
-    list.innerHTML += `<li>${s.name} (${s.usn})</li>`;
+    if (role === "faculty") {
+      list.innerHTML += `
+        <li>
+          ${s.name} (${s.usn}) - ${s.attendance || 0}%
+          <button onclick="updateAttendance(${s.id})">Update</button>
+          <button onclick="deleteStudent(${s.id})" class="delete">Delete</button>
+        </li>
+      `;
+    } else {
+      list.innerHTML += `
+        <li>
+          ${s.name} (${s.usn}) - ${s.attendance || 0}%
+        </li>
+      `;
+    }
   });
 }
 
-loadStudents();
 </script>
 
 </body>

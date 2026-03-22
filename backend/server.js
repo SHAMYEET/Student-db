@@ -22,6 +22,7 @@ app.get("/students", (req, res) => {
   });
 });
 
+
 // ADD student
 app.post("/students", (req, res) => {
   const { name, usn } = req.body;
@@ -42,4 +43,25 @@ app.get("/", (req, res) => {
 });
 app.listen(3001, () => {
   console.log("Server running on port 3001");
+});
+app.put("/students/:id", (req, res) => {
+  const id = req.params.id;
+  const { attendance } = req.body;
+
+  db.query(
+    "UPDATE students SET attendance = ? WHERE id = ?",
+    [attendance, id],
+    (err, result) => {
+      if (err) return res.json(err);
+      res.json("Attendance updated");
+    }
+  );
+});
+app.delete("/students/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("DELETE FROM students WHERE id = ?", [id], (err, result) => {
+    if (err) return res.json(err);
+    res.json("Student deleted");
+  });
 });
